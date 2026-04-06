@@ -128,6 +128,29 @@ export default function ChatInterface() {
     return corrections
   }
 
+  function buildApiErrorMessage(status, apiMessage) {
+    if (status === 400) {
+      if (apiMessage?.includes('API_KEY_INVALID')) {
+        return 'Invalid API key. Please check your key in Settings.'
+      }
+      return apiMessage || 'Invalid request. Please verify your input and try again.'
+    }
+
+    if (status === 401 || status === 403) {
+      return 'Authentication failed. Please update your API key in Settings.'
+    }
+
+    if (status === 429) {
+      return 'Too many requests. Please wait a moment and try again.'
+    }
+
+    if (status >= 500) {
+      return 'The AI service is temporarily unavailable. Please try again shortly.'
+    }
+
+    return apiMessage || `API Error: ${status}`
+  }
+
   async function sendMessage(userText) {
     if (!apiKey) {
       setShowApiKeyModal(true)
@@ -182,17 +205,20 @@ export default function ChatInterface() {
       )
 
       if (!response.ok) {
+        let apiMessage = ''
+        try {
+          const errorData = await response.json()
+          apiMessage = errorData?.error?.message || ''
+        } catch {
+          apiMessage = ''
+        }
+
         if (response.status === 400) {
-          const error = await response.json()
-          if (error.error?.message?.includes('API_KEY_INVALID')) {
-            throw new Error('Invalid API key. Please check your key in Settings.')
-          }
-          throw new Error(error.error?.message || 'Invalid request')
+          throw new Error(buildApiErrorMessage(response.status, apiMessage))
         } else if (response.status === 429) {
-          throw new Error('Too many requests. Please wait a moment and try again.')
+          throw new Error(buildApiErrorMessage(response.status, apiMessage))
         } else {
-          const error = await response.json()
-          throw new Error(error.error?.message || `API Error: ${response.status}`)
+          throw new Error(buildApiErrorMessage(response.status, apiMessage))
         }
       }
 

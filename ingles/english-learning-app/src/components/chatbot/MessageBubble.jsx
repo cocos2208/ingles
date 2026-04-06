@@ -31,7 +31,17 @@ export default function MessageBubble({ message, onSpeak, isSpeaking }) {
 
       <div className="message-content-wrapper">
         <div className={`message-content ${isError ? 'error-message' : ''}`}>
+          {isError && (
+            <div style={{ fontWeight: 700, marginBottom: '0.35rem' }}>
+              System Error
+            </div>
+          )}
           {displayContent}
+          {isError && (
+            <div style={{ marginTop: '0.35rem', fontSize: '0.85rem', opacity: 0.9 }}>
+              Please check your API key or internet connection and try again.
+            </div>
+          )}
         </div>
 
         {message.corrections && message.corrections.length > 0 && (

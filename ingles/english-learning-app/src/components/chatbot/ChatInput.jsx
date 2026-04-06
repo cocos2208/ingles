@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 
 export default function ChatInput({ onSendMessage, disabled }) {
   const [inputText, setInputText] = useState('')
+  const [validationMessage, setValidationMessage] = useState('')
   const [isListening, setIsListening] = useState(false)
   const [recognition, setRecognition] = useState(null)
   const [recognitionSupported, setRecognitionSupported] = useState(true)
@@ -64,10 +65,25 @@ export default function ChatInput({ onSendMessage, disabled }) {
 
   function handleSend(text = inputText) {
     const trimmed = text.trim()
-    if (!trimmed || disabled) return
+
+    if (disabled) {
+      setValidationMessage('Please wait for the current response before sending another message.')
+      return
+    }
+
+    if (!trimmed) {
+      setValidationMessage('Please type a message before sending.')
+      return
+    }
+
+    if (trimmed.length < 2) {
+      setValidationMessage('Message is too short. Please add a bit more detail.')
+      return
+    }
 
     onSendMessage(trimmed)
     setInputText('')
+    setValidationMessage('')
 
     // Reset textarea height
     if (textareaRef.current) {
@@ -107,12 +123,23 @@ export default function ChatInput({ onSendMessage, disabled }) {
         ref={textareaRef}
         className="chat-textarea"
         value={inputText}
-        onChange={(e) => setInputText(e.target.value)}
+        onChange={(e) => {
+          setInputText(e.target.value)
+          if (validationMessage) {
+            setValidationMessage('')
+          }
+        }}
         onKeyPress={handleKeyPress}
         placeholder="Type your message or click the microphone..."
         disabled={disabled || isListening}
         rows={1}
       />
+
+      {validationMessage && (
+        <p style={{ color: 'var(--wrong)', fontSize: '0.84rem', margin: '0.45rem 0 0' }}>
+          {validationMessage}
+        </p>
+      )}
 
       <div className="chat-input-btns">
         <button
